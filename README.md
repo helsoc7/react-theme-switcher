@@ -1,70 +1,154 @@
-# Getting Started with Create React App
+# React Grundlagen 6: Theme Switcher
+Erstelle eine React Anwendung mit einer Header, Footer und Main Componente. Im Header soll ein Theme Switch vorhanden sein, der das Theme von light auf dark umstellt. Nutze für das Styling Deiner Anwendung Tailwind.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+#### Funktionen:
+- Schaltfläche zum Umschalten zwischen hellem und dunklem Thema.
+- Globale Anwendung des gewählten Themas.
+- Es soll jeweils eine Header, Footer und Main Komponente integriert sein.
+- Der Footer soll "sticky" sein, sich also immer am Ende der Seite befinden.
+- Der Theme Switcher Button soll sein Erscheinungsbild auch ändern.
 
-## Available Scripts
+#### Hinweise:
+- Nutze die Context-API, um den Themenzustand über die gesamte Anwendung hinweg verfügbar zu machen.
+- Erstelle benutzerdefinierte Hooks (`useTheme`), um das Thema in deinen Komponenten leicht zugänglich zu machen.
+- Das Theme soll mit Tailwind erstellt werden, für den Theme Switcher Button benutze Lucide Icons (Sun/Moon)
+- Das ausgewählte Thema wird nur im lokalen Zustand gespeichert und bleibt nicht erhalten, wenn du den Browser schließt.
+- Die Verwendung von Tailwind CSS sollte konsistent und ästhetisch ansprechend sein.
 
-In the project directory, you can run:
+---
+### Schritt 1: Projekt erstellen
+Erstelle ein neues React-Projekt mit `npx create-react-app theme-switcher`.
+Navigiere in das Projektverzeichnis mit `cd theme-switcher`.
+Danach installieren wir die notwendigen Abhängigkeiten mit `npm install tailwindcss lucide-react`. Lucide React ist eine Icon-Bibliothek, die eine Sammlung von SVG-Icons bietet, die sich leicht in React-Anwendungen integrieren lassen. Der Hauptgrund für die Verwendung von Lucide React in diesem Projekt besteht darin, die Sun- und Moon-Icons bereitzustellen, die wir für den Theme-Switcher-Button verwenden. Dann müssen wir natürlich noch die Tailwind-Konfigurationsdatei erstellen, indem wir `npx tailwindcss init` ausführen. 
+Dann konfigurieren wir die `tailwind.config.js` Datei:
+```
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  darkMode: 'class',
+  plugins: [],
+}
 
-### `npm start`
+```
+Danach erstellen wir in unserem `src`-Ordner eine neue Datei namens `index.css` und fügen folgenden Inhalt ein:
+```
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+### Schritt 2: Theme Context erstellen
+Erstelle einen neuen Ordner namens `context` im `src`-Ordner und darin eine neue Datei namens `ThemeContext.js`. Füge folgenden Inhalt ein:
+```
+import React, { createContext, useContext, useState } from 'react';
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+const ThemeContext = createContext();
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+export const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState('light');
 
-### `npm test`
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <div className={theme === 'light' ? 'light' : 'dark'}>
+        {children}
+      </div>
+    </ThemeContext.Provider>
+  );
+};
 
-### `npm run build`
+export const useTheme = () => useContext(ThemeContext);
+```
+Wir erstellen mit ThemeContext einen neuen Kontext. Dieser wird verwendet, um Werte wie das aktuelle Theme und die Funktion zum Umschalten des Themes über die gesamte Anwendung hinweg verfügbar zu machen. Mit `ThemeProvider` wird der Kontext bereitgestellt und das aktuelle Thema verwaltet. Die `toggleTheme`-Funktion wird verwendet, um zwischen den Themen zu wechseln. const [theme, setTheme] = useState('light');: Dies definiert einen State-Hook, der das aktuelle Thema speichert. Der Standardwert ist 'light'. Mit `useTheme` wird der Kontext in den Komponenten verwendet, um das aktuelle Thema und die Funktion zum Umschalten des Themas abzurufen. export const useTheme = () => useContext(ThemeContext);: Dies ist ein benutzerdefinierter Hook namens useTheme. Er ermöglicht es jeder Komponente, die diesen Hook aufruft, auf den ThemeContext zuzugreifen und somit das aktuelle Thema (theme) und die Funktion zum Umschalten des Themas (toggleTheme) zu nutzen.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Schritt 3: Header, Footer und Main Komponenten erstellen
+Erstelle einen neuen Ordner namens `components` im `src`-Ordner und darin drei Dateien: `Header.js`, `Footer.js` und `Main.js`. Füge folgenden Inhalt in die Dateien ein:
+`Header.js`:
+```
+import React from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+const Header = () => {
+  const { theme, toggleTheme } = useTheme();
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  return (
+    <header className="bg-gray-200 dark:bg-gray-800 p-4 flex justify-between items-center">
+      <h1 className="text-xl font-bold">Theme Switcher App</h1>
+      <button
+        onClick={toggleTheme}
+        className="p-2 rounded-full bg-gray-300 dark:bg-gray-700"
+      >
+        {theme === 'light' ? <Sun className="text-yellow-500" /> : <Moon className="text-white" />}
+      </button>
+    </header>
+  );
+};
 
-### `npm run eject`
+export default Header;
+```
+Das ist ein normaler Header. Auffällig ist aber der `useTheme`-Hook, der das aktuelle Theme und die Funktion zum Umschalten des Themes abruft. Der Theme-Switcher-Button wird mit einem Sun- oder Moon-Icon angezeigt, je nachdem, ob das aktuelle Thema 'light' oder 'dark' ist. Der Button wird mit einer Hintergrundfarbe versehen, die sich je nach Theme ändert.
+`Footer.js`:
+```
+import React from 'react';
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+const Footer = () => {
+  return (
+    <footer className="bg-gray-200 dark:bg-gray-800 p-4 text-center">
+      <p>© 2024 Theme Switcher App. All rights reserved.</p>
+    </footer>
+  );
+};
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+export default Footer;
+```
+Das ist ein normaler Footer. Er wird am unteren Rand der Seite angezeigt und enthält den Copyright-Text.
+`Main.js`:
+```
+import React from 'react';
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+const Main = () => {
+  return (
+    <main className="flex-grow p-4">
+      <h2 className="text-2xl">Welcome to the Theme Switcher App</h2>
+      <p>Use the button in the header to toggle between light and dark themes.</p>
+    </main>
+  );
+};
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+export default Main;
+```
+Das ist die Hauptkomponente. Sie enthält eine Überschrift und eine kurze Beschreibung der Anwendung. Hier wird aber auch nicht der Theme-Switcher-Button angezeigt. Dieser befindet sich im Header.
+### Schritt 4: App-Komponente erstellen
+In der `App.js`-Datei fügen wir folgenden Inhalt ein:
+```
+import React from 'react';
+import { ThemeProvider } from './context/ThemeContext';
+import Header from './components/Header';
+import Main from './components/Main';
+import Footer from './components/Footer';
 
-## Learn More
+function App() {
+  return (
+    <ThemeProvider>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <Main />
+        <Footer />
+      </div>
+    </ThemeProvider>
+  );
+}
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+export default App;
+```
+Hier verwenden wir dann für die gesamte Anwendung einen ThemeProvider. Dieser umschließt quasi unsere App. 
 
-To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
